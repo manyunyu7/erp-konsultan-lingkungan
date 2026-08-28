@@ -30,6 +30,7 @@ model User {
   notifications    NotificationRecipient[]
   auditLogs        AuditLog[]
   manpowerRequests ManpowerRequest[]
+  attachments      Attachment[]
 }
 
 model Client {
@@ -443,4 +444,32 @@ model PermissionGrant {
 
   @@unique([subjectType, subject, permission])
   @@index([subjectType, subject])
+}
+
+// ------------------------------------------------------------ BERKAS LAMPIRAN
+
+/**
+ * Lampiran untuk entitas apa pun (proyek, tender, personel, dan seterusnya).
+ *
+ * Berkas fisik disimpan di luar direktori publik; aksesnya selalu melewati
+ * pemeriksaan izin, sebab dokumen kontrak dan sertifikat bukan bacaan umum.
+ */
+model Attachment {
+  id         String @id @default(cuid())
+  entityType String // Project | Tender | Personnel | Certification | Contract | Deliverable | LabSample | Invoice
+  entityId   String
+
+  kind         String // DOKUMEN | FOTO
+  originalName String
+  storedPath   String @unique
+  mimeType     String
+  sizeBytes    Int
+  caption      String?
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
 }

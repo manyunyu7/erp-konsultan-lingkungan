@@ -42,3 +42,6 @@ next-env.d.ts
 
 # kecuali contoh konfigurasi
 !.env.example
+
+# berkas unggahan pengguna
+/storage
