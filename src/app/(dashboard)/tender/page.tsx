@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { Plus } from 'lucide-react'
 import { db } from '@/lib/db'
 import { currentActor } from '@/lib/api'
 import { can } from '@/server/auth'
@@ -55,11 +57,22 @@ export default async function HalamanTender() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-gap">
-      <div>
-        <h1 className="text-lg font-semibold tracking-tight">Tender</h1>
-        <p className="text-sm text-muted-foreground">
-          Yang tenggatnya paling dekat tampil lebih dulu — per {tanggal(now)}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold tracking-tight">Tender</h1>
+          <p className="text-sm text-muted-foreground">
+            Yang tenggatnya paling dekat tampil lebih dulu — per {tanggal(now)}
+          </p>
+        </div>
+        {can(actor, 'tender:write') && (
+          <Link
+            href="/tender/baru"
+            className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+          >
+            <Plus className="size-4" />
+            Tender baru
+          </Link>
+        )}
       </div>
 
       <Card>
