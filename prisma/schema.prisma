@@ -1,0 +1,427 @@
+// Skema ERP Konsultan Lingkungan
+// Sumber kebenaran: dokumen "Alur Sistem Operasional Konsultan Lingkungan"
+// Nilai enum sengaja disimpan sebagai String agar portabel antar database.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------- ORGANISASI
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String // DIREKTUR | FINANCE_MANAGER | PROJECT_MANAGER | STAFF
+  division     String // MARKETING | ADMIN_LEGAL | FINANCE | TEKNIS | HR | MANAJEMEN
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  personnel        Personnel?
+  managedProjects  Project[]         @relation("ProjectManager")
+  requestedCosts   CostEntry[]       @relation("CostRequester")
+  approvals        Approval[]
+  notifications    NotificationRecipient[]
+  auditLogs        AuditLog[]
+  manpowerRequests ManpowerRequest[]
+}
+
+model Client {
+  id            String   @id @default(cuid())
+  name          String
+  contactPerson String?
+  email         String?
+  phone         String?
+  address       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenders  Tender[]
+  projects Project[]
+}
+
+// ------------------------------------------------- TAHAP 1: PEMASARAN & TENDER
+
+model Tender {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  title       String
+  clientId    String
+  client      Client  @relation(fields: [clientId], references: [id])
+  source      String // LPSE | BUMN | SWASTA | PENUNJUKAN_LANGSUNG
+  description String?
+
+  // Kajian KAK/TOR dan penawaran
+  torSummary       String?
+  estimatedValue   Decimal? @db.Decimal(18, 2)
+  bidValue         Decimal? @db.Decimal(18, 2)
+  winRateProbability Int? // persen 0-100; gate persetujuan biaya tender = minimal 60
+
+  submissionDeadline DateTime
+  announcementDate   DateTime?
+
+  status String @default("IDENTIFIED") // IDENTIFIED | PREPARING | SUBMITTED | WON | LOST | CANCELLED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  costs   CostEntry[]
+  project Project?
+}
+
+// ------------------------------------------- TAHAP 2: KONTRAK & TAHAP 3: PROYEK
+
+model Project {
+  id       String  @id @default(cuid())
+  code     String  @unique // Job Order ID
+  name     String
+  clientId String
+  client   Client  @relation(fields: [clientId], references: [id])
+  tenderId String? @unique
+  tender   Tender? @relation(fields: [tenderId], references: [id])
+
+  projectManagerId String?
+  projectManager   User?   @relation("ProjectManager", fields: [projectManagerId], references: [id])
+
+  documentType String // AMDAL | UKL_UPL | DELH | DPLH | LAINNYA
+  contractValue Decimal @db.Decimal(18, 2)
+
+  startDate DateTime
+  endDate   DateTime // dipakai alert Contract Expiry H-30 & H-14
+
+  status String @default("PREPARATION") // PREPARATION | RUNNING | REPORTING | CLOSING | CLOSED | CANCELLED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contracts    Contract[]
+  costs        CostEntry[]
+  termins      Termin[]
+  deliverables Deliverable[]
+  labSamples   LabSample[]
+  assignments  Assignment[]
+  bast         Bast?
+  csat         CsatSurvey?
+  evaluations  KpiEvaluation[]
+}
+
+model Contract {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type        String // SPK | LOA | PKS | ADDENDUM
+  number      String
+  signedAt    DateTime
+  validUntil  DateTime
+  documentUrl String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// -------------------------------------------------- BAB 2: MANAJEMEN KEUANGAN
+
+// pattern = BIDDING  -> Pola 1, biaya hangus bila tender kalah (marketing expense)
+// pattern = PROJECT  -> Pola 2, direct cost yang dicover anggaran proyek (HPP)
+model CostEntry {
+  id      String  @id @default(cuid())
+  pattern String // BIDDING | PROJECT
+
+  tenderId  String?
+  tender    Tender?  @relation(fields: [tenderId], references: [id])
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+
+  category    String // lihat src/server/finance/constants.ts
+  coaCode     String
+  description String
+  amount      Decimal  @db.Decimal(18, 2)
+  incurredAt  DateTime
+
+  requestedById String
+  requestedBy   User   @relation("CostRequester", fields: [requestedById], references: [id])
+
+  status String @default("DRAFT") // DRAFT | PENDING_APPROVAL | APPROVED | REJECTED | PAID
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  approvals Approval[]
+}
+
+// Biaya tender wajib disetujui Direktur Operasional DAN Finance Manager
+model Approval {
+  id          String    @id @default(cuid())
+  costEntryId String
+  costEntry   CostEntry @relation(fields: [costEntryId], references: [id], onDelete: Cascade)
+  approverId  String
+  approver    User      @relation(fields: [approverId], references: [id])
+  role        String // DIREKTUR | FINANCE_MANAGER
+  decision    String // PENDING | APPROVED | REJECTED
+  note        String?
+  decidedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([costEntryId, role])
+}
+
+// Termijn I 20-30% | II 40-50% | III 20-30%
+model Termin {
+  id         String  @id @default(cuid())
+  projectId  String
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sequence   Int // 1 | 2 | 3
+  name       String
+  percentage Decimal @db.Decimal(5, 2)
+  amount     Decimal @db.Decimal(18, 2)
+
+  milestone     String // CONTRACT_SIGNED | DRAFT_REPORT | BAST
+  milestoneMetAt DateTime?
+  plannedDate   DateTime
+
+  status String @default("PENDING") // PENDING | READY_TO_INVOICE | INVOICED | PAID
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invoice Invoice?
+
+  @@unique([projectId, sequence])
+}
+
+model Invoice {
+  id       String @id @default(cuid())
+  number   String @unique
+  terminId String @unique
+  termin   Termin @relation(fields: [terminId], references: [id], onDelete: Cascade)
+
+  // BAP wajib terverifikasi sebelum invoice terbit
+  bapNumber     String?
+  bapVerifiedAt DateTime?
+  taxInvoiceNo  String?
+
+  amount   Decimal  @db.Decimal(18, 2)
+  issuedAt DateTime
+  dueDate  DateTime // alert H-3 pre-due & H+1 overdue
+  paidAt   DateTime?
+
+  status String @default("DRAFT") // DRAFT | ISSUED | PAID | OVERDUE | CANCELLED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ------------------------------------------------------------------ BAB 3: HR
+
+model Personnel {
+  id     String  @id @default(cuid())
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+
+  fullName       String
+  employmentType String // TETAP | PKWT | FREELANCE_EXPERT
+  position       String
+  expertise      String?
+  joinedAt       DateTime?
+  isActive       Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  certifications Certification[]
+  assignments    Assignment[]
+  evaluations    KpiEvaluation[]
+}
+
+// Alert perpanjangan sertifikat H-60 sebelum kedaluwarsa
+model Certification {
+  id          String   @id @default(cuid())
+  personnelId String
+  personnel   Personnel @relation(fields: [personnelId], references: [id], onDelete: Cascade)
+  name        String // KTPA | ATPA | K3 | AMBIL_SAMPEL | SKK | LAINNYA
+  issuer      String
+  number      String?
+  issuedAt    DateTime
+  expiresAt   DateTime
+  documentUrl String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Assignment {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  personnelId String
+  personnel   Personnel @relation(fields: [personnelId], references: [id])
+  role        String
+  startDate   DateTime
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([projectId, personnelId, role])
+}
+
+// Form Kebutuhan Personel (F-HR-01)
+model ManpowerRequest {
+  id             String   @id @default(cuid())
+  formNumber     String   @unique
+  requestedById  String
+  requestedBy    User     @relation(fields: [requestedById], references: [id])
+  position       String
+  employmentType String
+  qualification  String
+  certifications String
+  quantity       Int
+  neededBy       DateTime
+  status         String   @default("SUBMITTED") // SUBMITTED | APPROVED | REJECTED | FULFILLED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Tahunan untuk karyawan tetap, per-proyek untuk tenaga ahli kontrak
+model KpiEvaluation {
+  id          String    @id @default(cuid())
+  personnelId String
+  personnel   Personnel @relation(fields: [personnelId], references: [id], onDelete: Cascade)
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id])
+
+  periodType String // ANNUAL | PER_PROJECT
+  periodYear Int?
+
+  punctualityScore  Int // 0-100
+  qualityScore      Int
+  teamworkScore     Int
+  totalScore        Decimal @db.Decimal(5, 2)
+
+  note        String?
+  evaluatedAt DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ------------------------------------------------------ BAB 4: OPERASI TEKNIS
+
+model Deliverable {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type      String // DESK_STUDY | SAMPLING_PLAN | DRAFT_REPORT | FINAL_REPORT | EXPOSE
+  name      String
+
+  dueDate     DateTime // alert H-14, H-7, H-3
+  submittedAt DateTime?
+  qcPassedAt  DateTime?
+  status      String @default("PENDING") // PENDING | IN_PROGRESS | QC_REVIEW | SUBMITTED | APPROVED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LabSample {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sampleCode    String
+  matrix        String // AIR | UDARA | TANAH | FLORA | FAUNA | SOSEKBUD
+  location      String
+  takenAt       DateTime
+  laboratory    String // wajib terakreditasi KAN
+  cocNumber     String? // Chain of Custody
+  resultUrl     String?
+  status        String @default("COLLECTED") // COLLECTED | SENT | TESTED | REPORTED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// --------------------------------------------- BAB 5: NOTIFIKASI & PERINGATAN
+
+model Notification {
+  id       String @id @default(cuid())
+  category String // TENDER_DEADLINE | TECHNICAL_DEADLINE | INVOICING | PAYMENT_OVERDUE | CONTRACT_EXPIRY | CERTIFICATE_EXPIRY
+
+  entityType String // Tender | Deliverable | Termin | Invoice | Project | Certification
+  entityId   String
+
+  offsetDays Int // negatif = sebelum (H-3 => -3), positif = sesudah (H+1 => 1)
+  triggerAt  DateTime
+  title      String
+  message    String
+  action     String
+
+  status  String    @default("PENDING") // PENDING | SENT | DISMISSED
+  sentAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recipients NotificationRecipient[]
+
+  @@unique([category, entityId, offsetDays])
+  @@index([status, triggerAt])
+}
+
+model NotificationRecipient {
+  id             String       @id @default(cuid())
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  readAt         DateTime?
+
+  @@unique([notificationId, userId])
+}
+
+// --------------------------------------------- BAB 6: PENUTUPAN PROYEK & CSAT
+
+model Bast {
+  id           String   @id @default(cuid())
+  projectId    String   @unique
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  number       String
+  signedAt     DateTime
+  permitNumber String? // nomor persetujuan lingkungan
+  documentUrl  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Bobot: teknis 35, ketepatan waktu 25, komunikasi 20, administrasi 20
+model CsatSurvey {
+  id        String  @id @default(cuid())
+  projectId String  @unique
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  technicalScore      Int? // 0-100
+  timelinessScore     Int?
+  responsivenessScore Int?
+  complianceScore     Int?
+  weightedScore       Decimal? @db.Decimal(5, 2)
+
+  comment     String?
+  sentAt      DateTime?
+  respondedAt DateTime?
+  status      String   @default("PENDING") // PENDING | SENT | COMPLETED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
