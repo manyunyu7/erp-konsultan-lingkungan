@@ -1,13 +1,13 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { expectedPeriodType, type EmploymentType } from '@/server/hr'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TD, TH, THead, TR } from '@/components/ui/table'
 import { Kosong } from '@/components/ui/notice'
+import { PanelLampiran } from '@/components/lampiran/panel-lampiran'
 import { sisaHari, tanggal } from '@/lib/utils'
 import { KEPEGAWAIAN_LABEL, SERTIFIKAT_LABEL } from '../labels'
 import { FormSertifikat } from './form-sertifikat'
@@ -23,7 +23,7 @@ export default async function HalamanRincianPersonel({
 }) {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'personnel:read')) notFound()
+  if (!await izinkan(actor, 'personnel:read')) notFound()
 
   const { id } = await params
   const personnel = await db.personnel.findUnique({
@@ -42,9 +42,9 @@ export default async function HalamanRincianPersonel({
   })
   if (!personnel) notFound()
 
-  const bolehTulisPersonel = can(actor, 'personnel:write')
-  const bolehLihatKpi = can(actor, 'kpi:read')
-  const bolehTulisKpi = can(actor, 'kpi:write')
+  const bolehTulisPersonel = await izinkan(actor, 'personnel:write')
+  const bolehLihatKpi = await izinkan(actor, 'kpi:read')
+  const bolehTulisKpi = await izinkan(actor, 'kpi:write')
   const now = new Date()
 
   const periodType = expectedPeriodType(personnel.employmentType as EmploymentType)
@@ -134,6 +134,12 @@ export default async function HalamanRincianPersonel({
           )}
         </CardContent>
       </Card>
+
+      <PanelLampiran
+        entityType="Personnel"
+        entityId={personnel.id}
+        judul="Ijazah, sertifikat, dan dokumen pendukung"
+      />
 
       {bolehTulisPersonel && (
         <Card>

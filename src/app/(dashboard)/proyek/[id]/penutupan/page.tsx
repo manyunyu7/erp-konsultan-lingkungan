@@ -2,8 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, Check, X } from 'lucide-react'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { getClosureChecklist } from '@/server/lifecycle'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -31,9 +30,9 @@ export default async function HalamanPenutupanProyek({
   const q = await searchParams
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'project:write')) notFound()
+  if (!await izinkan(actor, 'project:write')) notFound()
 
-  const bolehCsat = can(actor, 'csat:write')
+  const bolehCsat = await izinkan(actor, 'csat:write')
   const dicentang = (nama: string) => q[nama] === 'ya'
 
   const project = await db.project.findUnique({

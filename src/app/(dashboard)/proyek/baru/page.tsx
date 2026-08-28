@@ -2,15 +2,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { FormProyek } from './form-proyek'
 
 export default async function HalamanProyekBaru() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'project:write')) notFound()
+  if (!await izinkan(actor, 'project:write')) notFound()
 
   // Hanya tender MENANG yang belum punya job order turunan yang bisa dikonversi.
   const tender = await db.tender.findMany({

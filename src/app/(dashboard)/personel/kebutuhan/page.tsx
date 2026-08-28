@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import {
   MANPOWER_REQUEST_STATUSES,
   canTransitionManpowerRequest,
@@ -27,9 +26,9 @@ const STATUS_VARIAN: Record<string, VarianBadge> = {
 export default async function HalamanKebutuhanPersonel() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'personnel:read')) notFound()
+  if (!await izinkan(actor, 'personnel:read')) notFound()
 
-  const bolehTulis = can(actor, 'personnel:write')
+  const bolehTulis = await izinkan(actor, 'personnel:write')
 
   const requests = await db.manpowerRequest.findMany({
     orderBy: { createdAt: 'desc' },

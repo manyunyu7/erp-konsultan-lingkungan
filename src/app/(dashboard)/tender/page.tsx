@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge, type VarianBadge } from '@/components/ui/badge'
 import { Table, TD, TH, THead, TR } from '@/components/ui/table'
@@ -40,9 +39,11 @@ const STATUS_AKTIF = ['IDENTIFIED', 'PREPARING', 'SUBMITTED']
 export default async function HalamanTender() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'tender:read')) return <AksesDitolak />
+  if (!(await izinkan(actor, 'tender:read'))) return <AksesDitolak />
 
-  const bolehNilai = can(actor, 'cost:read')
+  const bolehNilai = await izinkan(actor, 'cost:read')
+  // Dihitung di sini karena `await` tidak dapat dipakai langsung di dalam JSX.
+  const bolehTulisTender = await izinkan(actor, 'tender:write')
   const now = new Date()
 
   const tenders = await db.tender.findMany({
@@ -64,7 +65,7 @@ export default async function HalamanTender() {
             Yang tenggatnya paling dekat tampil lebih dulu — per {tanggal(now)}
           </p>
         </div>
-        {can(actor, 'tender:write') && (
+        {bolehTulisTender && (
           <Link
             href="/tender/baru"
             className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
@@ -142,8 +143,16 @@ function TabelTender({
           const sisa = sisaHari(t.submissionDeadline, now)
           return (
             <TR key={t.id}>
-              <TD className="font-medium whitespace-nowrap">{t.code}</TD>
-              <TD className="max-w-64 truncate">{t.title}</TD>
+              <TD className="font-medium whitespace-nowrap">
+                <Link href={`/tender/${t.id}`} className="hover:underline">
+                  {t.code}
+                </Link>
+              </TD>
+              <TD className="max-w-64 truncate">
+                <Link href={`/tender/${t.id}`} className="hover:underline">
+                  {t.title}
+                </Link>
+              </TD>
               <TD className="max-w-40 truncate text-muted-foreground">{t.client.name}</TD>
               <TD className="whitespace-nowrap">{SUMBER_LABEL[t.source] ?? t.source}</TD>
               {bolehNilai && (

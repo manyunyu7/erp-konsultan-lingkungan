@@ -2,9 +2,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { collectApprovedStages } from '@/server/lifecycle'
+import { PanelLampiran } from '@/components/lampiran/panel-lampiran'
 import { PanelPekerjaan } from './panel-pekerjaan'
 
 export default async function HalamanPekerjaanProyek({
@@ -15,7 +15,7 @@ export default async function HalamanPekerjaanProyek({
   const { id } = await params
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'deliverable:write')) notFound()
+  if (!await izinkan(actor, 'deliverable:write')) notFound()
 
   const project = await db.project.findUnique({
     where: { id },
@@ -67,6 +67,21 @@ export default async function HalamanPekerjaanProyek({
           takenAt: s.takenAt.toISOString(),
         }))}
       />
+
+      <PanelLampiran
+        entityType="Project"
+        entityId={project.id}
+        judul="Foto lapangan & dokumen teknis"
+      />
+
+      {project.deliverables.map((d) => (
+        <PanelLampiran
+          key={d.id}
+          entityType="Deliverable"
+          entityId={d.id}
+          judul={`Lampiran tahap: ${d.name}`}
+        />
+      ))}
     </div>
   )
 }

@@ -1,12 +1,11 @@
 import { notFound } from 'next/navigation'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { FormPersonel } from './form-personel'
 
 export default async function HalamanPersonelBaru() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'personnel:write')) notFound()
+  if (!await izinkan(actor, 'personnel:write')) notFound()
 
   return (
     <div className="mx-auto max-w-2xl">

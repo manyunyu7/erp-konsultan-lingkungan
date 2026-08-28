@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TD, TH, THead, TR } from '@/components/ui/table'
@@ -22,10 +21,10 @@ const STATUS_BERJALAN = ['PREPARATION', 'RUNNING', 'REPORTING', 'CLOSING']
 export default async function HalamanProyek() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'project:read')) return <AksesDitolak />
+  if (!await izinkan(actor, 'project:read')) return <AksesDitolak />
 
-  const bolehNilai = can(actor, 'invoice:read')
-  const bolehBuat = can(actor, 'project:write')
+  const bolehNilai = await izinkan(actor, 'invoice:read')
+  const bolehBuat = await izinkan(actor, 'project:write')
   const now = new Date()
 
   const projects = await db.project.findMany({

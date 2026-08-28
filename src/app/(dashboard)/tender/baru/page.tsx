@@ -1,13 +1,12 @@
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { FormTender } from './form-tender'
 
 export default async function HalamanTenderBaru() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'tender:write')) notFound()
+  if (!await izinkan(actor, 'tender:write')) notFound()
 
   const klien = await db.client.findMany({
     orderBy: { name: 'asc' },

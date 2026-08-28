@@ -2,8 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TD, TH, THead, TR } from '@/components/ui/table'
 import { Kosong } from '@/components/ui/notice'
@@ -25,7 +24,7 @@ export default async function HalamanKontrakProyek({
   const { id } = await params
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'contract:write')) notFound()
+  if (!await izinkan(actor, 'contract:write')) notFound()
 
   const project = await db.project.findUnique({
     where: { id },

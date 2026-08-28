@@ -2,13 +2,13 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge, type VarianBadge } from '@/components/ui/badge'
 import { Table, TD, TH, THead, TR } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { AksesDitolak, Kosong } from '@/components/ui/notice'
+import { PanelLampiran } from '@/components/lampiran/panel-lampiran'
 import { rupiah, sisaHari, tanggal } from '@/lib/utils'
 import {
   DELIVERABLE_STATUS_LABEL,
@@ -80,12 +80,12 @@ export default async function HalamanRincianProyek({
   const { id } = await params
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'project:read')) return <AksesDitolak />
+  if (!await izinkan(actor, 'project:read')) return <AksesDitolak />
 
-  const bolehKeuangan = can(actor, 'invoice:read')
-  const bolehProyek = can(actor, 'project:write')
-  const bolehKontrak = can(actor, 'contract:write')
-  const bolehTeknis = can(actor, 'deliverable:write')
+  const bolehKeuangan = await izinkan(actor, 'invoice:read')
+  const bolehProyek = await izinkan(actor, 'project:write')
+  const bolehKontrak = await izinkan(actor, 'contract:write')
+  const bolehTeknis = await izinkan(actor, 'deliverable:write')
   const now = new Date()
 
   const project = await db.project.findUnique({
@@ -399,6 +399,8 @@ export default async function HalamanRincianProyek({
           </CardContent>
         </Card>
       )}
+
+      <PanelLampiran entityType="Project" entityId={project.id} judul="Dokumen proyek" />
 
       <Card>
         <CardContent className="flex flex-col gap-3">
