@@ -175,12 +175,15 @@ sebagai staf teknis untuk melihat perbedaan wewenangnya.
 - [x] Antarmuka dashboard & sistem tema
 - [x] Data contoh untuk uji coba
 
+- [x] Formulir pengisian data lewat antarmuka
+- [x] Penjadwal pemindaian peringatan (`npm run pindai:peringatan`, lihat
+      `scripts/README.md`)
+
 Belum dikerjakan:
 
-- [ ] Formulir pengisian data lewat antarmuka (saat ini pengisian melalui seed
-      atau langsung ke basis data; seluruh aturan dan endpointnya sudah siap)
 - [ ] Pengiriman email sungguhan untuk peringatan — titik sambungnya ada pada
       `NotificationSender`, saat ini hanya mencatat ke basis data
-- [ ] Penjadwal berkala yang memanggil `/api/notifications/scan`
 - [ ] Unggah dan penyimpanan berkas dokumen
+- [ ] Penyuntingan dan penghapusan data yang sudah tercatat (saat ini
+      pengisian baru dan perubahan status; koreksi masih lewat basis data)
 - [ ] Penyiapan penempatan ke server
