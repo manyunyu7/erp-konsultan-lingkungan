@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge, type VarianBadge } from '@/components/ui/badge'
 import { AksesDitolak, Kosong } from '@/components/ui/notice'
 import { tanggal } from '@/lib/utils'
+import { TombolPindai, TombolTandaiDibaca } from './aksi-peringatan'
 
 const KATEGORI_LABEL: Record<string, string> = {
   TENDER_DEADLINE: 'Tenggat tender',
@@ -50,13 +51,16 @@ export default async function HalamanPeringatan() {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-gap">
-      <div>
-        <h1 className="text-lg font-semibold tracking-tight">Peringatan</h1>
-        <p className="text-sm text-muted-foreground">
-          {belumDibaca > 0
-            ? `${belumDibaca} peringatan belum dibaca, terbaru di atas.`
-            : 'Semua peringatan sudah dibaca.'}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold tracking-tight">Peringatan</h1>
+          <p className="text-sm text-muted-foreground">
+            {belumDibaca > 0
+              ? `${belumDibaca} peringatan belum dibaca, terbaru di atas.`
+              : 'Semua peringatan sudah dibaca.'}
+          </p>
+        </div>
+        <TombolPindai />
       </div>
 
       {items.length === 0 ? (
@@ -94,6 +98,7 @@ export default async function HalamanPeringatan() {
                     <span className="text-muted-foreground">Yang perlu dilakukan: </span>
                     {n.action}
                   </p>
+                  {belum && <TombolTandaiDibaca notificationId={n.id} />}
                 </CardContent>
               </Card>
             )

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { db } from '@/lib/db'
 import { currentActor } from '@/lib/api'
 import { can } from '@/server/auth'
@@ -5,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TD, TH, THead, TR } from '@/components/ui/table'
 import { AksesDitolak, Kosong } from '@/components/ui/notice'
+import { Button } from '@/components/ui/button'
 import { sisaHari, tanggal } from '@/lib/utils'
 
 const KEPEGAWAIAN_LABEL: Record<string, string> = {
@@ -31,6 +33,7 @@ export default async function HalamanPersonel() {
   if (!can(actor, 'personnel:read')) return <AksesDitolak />
 
   const bolehKpi = can(actor, 'kpi:read')
+  const bolehTulis = can(actor, 'personnel:write')
   const now = new Date()
 
   const personnel = await db.personnel.findMany({
@@ -58,11 +61,25 @@ export default async function HalamanPersonel() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-gap">
-      <div>
-        <h1 className="text-lg font-semibold tracking-tight">Personel</h1>
-        <p className="text-sm text-muted-foreground">
-          Sertifikat yang habis dalam 60 hari ditandai peringatan — per {tanggal(now)}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold tracking-tight">Personel</h1>
+          <p className="text-sm text-muted-foreground">
+            Sertifikat yang habis dalam 60 hari ditandai peringatan — per {tanggal(now)}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/personel/kebutuhan">
+            <Button varian="garis" ukuran="sm">
+              Kebutuhan personel
+            </Button>
+          </Link>
+          {bolehTulis && (
+            <Link href="/personel/baru">
+              <Button ukuran="sm">Personel baru</Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {(kedaluwarsa > 0 || segeraHabis > 0) && (
@@ -104,7 +121,9 @@ export default async function HalamanPersonel() {
                     <TR key={p.id}>
                       <TD className="font-medium whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <span>{p.fullName}</span>
+                          <Link href={`/personel/${p.id}`} className="hover:underline">
+                            {p.fullName}
+                          </Link>
                           {!p.isActive && <Badge varian="netral">Nonaktif</Badge>}
                         </div>
                       </TD>
