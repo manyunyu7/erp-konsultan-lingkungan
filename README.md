@@ -167,11 +167,33 @@ Setelah `npm run setup`, seluruh akun contoh memakai kata sandi
 Daftar lengkap dicetak di akhir proses seed. Masuk sebagai Direktur lalu
 sebagai staf teknis untuk melihat perbedaan wewenangnya.
 
+### Lampiran berkas
+
+Proyek, tender, kontrak, pekerjaan teknis, sampel laboratorium, personel,
+sertifikat, dan invoice dapat dilampiri dokumen maupun foto — PDF, gambar,
+Word, atau Excel, sampai 10 MB per berkas. Gambar tampil sebagai thumbnail
+dan PDF dapat dibuka langsung tanpa mengunduh.
+
+Berkas disimpan di luar direktori publik pada folder `storage/uploads`
+(dapat dipindah lewat `UPLOAD_DIR`), sehingga setiap pengambilan melewati
+pemeriksaan izin lebih dulu — dokumen kontrak dan sertifikat karyawan bukan
+bacaan umum. Izin yang berlaku mengikuti entitas yang dilampiri.
+
+Folder `storage/` tidak ikut masuk repositori. **Sertakan folder itu dalam
+pencadangan**, sebab isinya tidak dapat dibangun ulang dari kode.
+
 ### Pengelolaan akun
 
 Peran **Superadmin** mengurus akun: menambah karyawan, menonaktifkan yang
 keluar, mengubah peran, dan menyetel ulang kata sandi — lewat menu
 **Pengguna**.
+
+Matriks hak akses juga dapat disunting dari menu **Pengguna → Atur matriks
+hak akses**, tanpa mengubah kode. Dua hal dikunci dan tidak dapat diubah dari
+aplikasi: izin pengelolaan akun hanya milik Superadmin, dan Superadmin tidak
+dapat menerima wewenang bisnis. Tanpa kunci itu, administrator dapat memberi
+dirinya wewenang menyetujui biaya lalu mengajukan sekaligus menyetujui
+pengeluarannya sendiri.
 
 Wewenangnya sengaja dipisah dari urusan bisnis. Superadmin tidak dapat
 menyetujui biaya maupun menerbitkan invoice; sebaliknya Direktur tidak dapat
@@ -209,11 +231,14 @@ masuk sebagai Direktur tanpa kata sandi.
 - [x] Penjadwal pemindaian peringatan (`npm run pindai:peringatan`, lihat
       `scripts/README.md`)
 
+- [x] Pengelolaan akun oleh Superadmin
+- [x] Matriks hak akses yang dapat disunting dari aplikasi
+- [x] Unggah dokumen dan foto beserta pratinjaunya
+
 Belum dikerjakan:
 
 - [ ] Pengiriman email sungguhan untuk peringatan — titik sambungnya ada pada
       `NotificationSender`, saat ini hanya mencatat ke basis data
-- [ ] Unggah dan penyimpanan berkas dokumen
 - [ ] Penyuntingan dan penghapusan data yang sudah tercatat (saat ini
       pengisian baru dan perubahan status; koreksi masih lewat basis data)
 - [ ] Pemutusan sesi yang sedang berjalan saat kata sandi disetel ulang atau
