@@ -55,7 +55,10 @@ const DIVISION_PERMISSIONS: Record<Division, Permission[]> = {
   ],
   TEKNIS: ['project:read', 'deliverable:read', 'deliverable:write', 'personnel:read'],
   HR: ['personnel:read', 'personnel:write', 'kpi:read', 'kpi:write', 'csat:read', 'csat:write'],
-  MANAJEMEN: [...PERMISSIONS],
+  // Divisi manajemen memantau seluruh lini, tetapi memantau bukan berarti
+  // boleh bertindak: wewenang menyetujui biaya dan menerbitkan invoice melekat
+  // pada jabatan (Direktur, Finance Manager), bukan pada penempatan divisi.
+  MANAJEMEN: PERMISSIONS.filter((p) => p.endsWith(':read')),
 }
 
 /** Tambahan izin yang melekat pada jabatan, terlepas dari divisinya. */

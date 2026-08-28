@@ -57,19 +57,26 @@ function applyToDocument(theme: ThemeSettings) {
   root.classList.toggle('dark', gelap)
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeSettings>(DEFAULT_THEME)
+/**
+ * Membaca preferensi tersimpan. Dipanggil sebagai nilai awal state di klien,
+ * bukan lewat effect, supaya tidak memicu render berantai.
+ */
+function bacaTersimpan(): ThemeSettings {
+  if (typeof window === 'undefined') return DEFAULT_THEME
+  try {
+    const tersimpan = window.localStorage.getItem(STORAGE_KEY)
+    return tersimpan ? { ...DEFAULT_THEME, ...JSON.parse(tersimpan) } : DEFAULT_THEME
+  } catch {
+    // Preferensi tampilan bukan data penting — abaikan bila storage diblokir.
+    return DEFAULT_THEME
+  }
+}
 
-  // Membaca preferensi tersimpan setelah render pertama agar tidak berbeda
-  // antara hasil server dan klien.
-  useEffect(() => {
-    try {
-      const tersimpan = window.localStorage.getItem(STORAGE_KEY)
-      if (tersimpan) setThemeState({ ...DEFAULT_THEME, ...JSON.parse(tersimpan) })
-    } catch {
-      // Preferensi tampilan bukan data penting — abaikan bila storage diblokir.
-    }
-  }, [])
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Nilai awal dibaca sekali saat komponen dibuat. Di server selalu bawaan;
+  // di klien langsung memakai preferensi tersimpan, sama seperti yang sudah
+  // diterapkan skrip pra-render pada elemen <html>, sehingga tidak ada kedipan.
+  const [theme, setThemeState] = useState<ThemeSettings>(bacaTersimpan)
 
   useEffect(() => {
     applyToDocument(theme)

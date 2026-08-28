@@ -30,13 +30,19 @@ describe('permissionsFor', () => {
     expect(new Set(result).size).toBe(result.length)
   })
 
-  it('memberi seluruh izin kepada direktur dan divisi manajemen', () => {
+  it('memberi seluruh izin kepada direktur di divisi manapun', () => {
     expect(permissionsFor({ role: 'DIREKTUR', division: 'TEKNIS' })).toEqual(
       expect.arrayContaining([...PERMISSIONS]),
     )
-    expect(permissionsFor({ role: 'STAFF', division: 'MANAJEMEN' })).toEqual(
-      expect.arrayContaining([...PERMISSIONS]),
-    )
+  })
+
+  it('memberi divisi manajemen hak memantau saja, bukan hak bertindak', () => {
+    const hasil = permissionsFor({ role: 'STAFF', division: 'MANAJEMEN' })
+
+    expect(hasil).toEqual(expect.arrayContaining(PERMISSIONS.filter((p) => p.endsWith(':read'))))
+    expect(hasil).not.toContain('cost:approve')
+    expect(hasil).not.toContain('invoice:write')
+    expect(hasil).not.toContain('contract:write')
   })
 
   it('membatasi staf teknis pada urusan teknis saja', () => {
