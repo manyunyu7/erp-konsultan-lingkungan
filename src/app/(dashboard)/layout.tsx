@@ -18,7 +18,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex h-dvh">
       <Sidebar permissions={permissionsFor(actor)} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar nama={user.name} peran={user.role} divisi={user.division} />
+        <Topbar
+          nama={user.name}
+          peran={user.role}
+          divisi={user.division}
+          idPengguna={actor.id}
+        />
         <main className="flex-1 overflow-y-auto p-pad">{children}</main>
       </div>
     </div>

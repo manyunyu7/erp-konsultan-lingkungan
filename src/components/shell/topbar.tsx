@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { PengalihAkun } from '@/components/dev/pengalih-akun'
 
 const LABEL_DIVISI: Record<string, string> = {
   MARKETING: 'Marketing & Tender',
@@ -24,10 +25,12 @@ export function Topbar({
   nama,
   peran,
   divisi,
+  idPengguna,
 }: {
   nama: string
   peran: string
   divisi: string
+  idPengguna: string
 }) {
   const router = useRouter()
 
@@ -45,10 +48,13 @@ export function Topbar({
           {LABEL_PERAN[peran] ?? peran} · {LABEL_DIVISI[divisi] ?? divisi}
         </p>
       </div>
-      <Button varian="halus" ukuran="sm" onClick={keluar}>
-        <LogOut className="size-3.5" />
-        Keluar
-      </Button>
+      <div className="flex items-center gap-3">
+        <PengalihAkun tampilan="ringkas" idAktif={idPengguna} />
+        <Button varian="halus" ukuran="sm" onClick={keluar}>
+          <LogOut className="size-3.5" />
+          Keluar
+        </Button>
+      </div>
     </header>
   )
 }

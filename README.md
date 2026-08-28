@@ -166,6 +166,22 @@ Setelah `npm run setup`, seluruh akun contoh memakai kata sandi
 Daftar lengkap dicetak di akhir proses seed. Masuk sebagai Direktur lalu
 sebagai staf teknis untuk melihat perbedaan wewenangnya.
 
+### Pengalih akun saat pengembangan
+
+Agar tidak perlu keluar-masuk berkali-kali saat membangun, tersedia pengalih
+akun tanpa kata sandi: daftar akun pada halaman masuk, dan pemilih akun di
+bilah atas untuk berpindah di tengah pekerjaan.
+
+Fitur ini dijaga dua lapis dan keduanya harus terpenuhi:
+
+1. `NODE_ENV` bukan `production`
+2. `DEV_ACCOUNT_SWITCHER=1` pada `.env`
+
+Bila salah satu tidak terpenuhi, endpointnya membalas 404 dan panelnya tidak
+ikut dirender — nama pegawai pun tidak muncul di HTML. **Jangan pernah mengisi
+`DEV_ACCOUNT_SWITCHER=1` di server produksi**, sebab artinya siapa pun dapat
+masuk sebagai Direktur tanpa kata sandi.
+
 ## Status pengembangan
 
 - [x] Skema database & pondasi proyek
