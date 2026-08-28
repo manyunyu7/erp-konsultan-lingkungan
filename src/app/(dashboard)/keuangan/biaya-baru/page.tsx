@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { BIDDING_COST_CATEGORIES, PROJECT_COST_CATEGORIES } from '@/server/finance'
 import { FormBiaya } from './form-biaya'
 import { LABEL_KATEGORI_BIAYA } from '../labels'
@@ -9,7 +8,7 @@ import { LABEL_KATEGORI_BIAYA } from '../labels'
 export default async function HalamanBiayaBaru() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'cost:write')) notFound()
+  if (!await izinkan(actor, 'cost:write')) notFound()
 
   const [tender, proyek] = await Promise.all([
     db.tender.findMany({

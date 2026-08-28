@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge, type VarianBadge } from '@/components/ui/badge'
 import { Table, TD, TH, THead, TR } from '@/components/ui/table'
@@ -37,7 +36,13 @@ const BIAYA_STATUS_VARIAN: Record<string, VarianBadge> = {
 export default async function HalamanKeuangan() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'invoice:read')) return <AksesDitolak />
+  if (!(await izinkan(actor, 'invoice:read'))) return <AksesDitolak />
+
+  // Dihitung lebih dulu: pemeriksaan izin kini asinkron dan `await` tidak bisa
+  // dipakai di dalam JSX.
+  const bolehCatatBiaya = await izinkan(actor, 'cost:write')
+  const bolehSetujuiBiaya = await izinkan(actor, 'cost:approve')
+  const bolehInvoice = await izinkan(actor, 'invoice:write')
 
   const now = new Date()
 
@@ -84,16 +89,16 @@ export default async function HalamanKeuangan() {
       </div>
 
       {/* Tautan tindakan mengikuti izin yang sama persis dengan endpointnya. */}
-      {(can(actor, 'cost:write') || can(actor, 'cost:approve') || can(actor, 'invoice:write')) && (
+      {(bolehCatatBiaya || bolehSetujuiBiaya || bolehInvoice) && (
         <div className="flex flex-wrap gap-2">
-          {can(actor, 'cost:write') && <TautanTindakan href="/keuangan/biaya-baru" label="Catat biaya" />}
-          {can(actor, 'cost:approve') && (
+          {bolehCatatBiaya && <TautanTindakan href="/keuangan/biaya-baru" label="Catat biaya" />}
+          {bolehSetujuiBiaya && (
             <TautanTindakan href="/keuangan/persetujuan" label="Persetujuan biaya tender" />
           )}
-          {can(actor, 'invoice:write') && (
+          {bolehInvoice && (
             <TautanTindakan href="/keuangan/termin-baru" label="Rencana termin" />
           )}
-          {can(actor, 'invoice:write') && (
+          {bolehInvoice && (
             <TautanTindakan href="/keuangan/invoice-baru" label="Terbitkan invoice" />
           )}
         </div>

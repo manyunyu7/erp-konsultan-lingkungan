@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
-import { currentActor } from '@/lib/api'
+import { currentActor, izinAktor } from '@/lib/api'
 import { db } from '@/lib/db'
-import { permissionsFor } from '@/server/auth'
 import { Sidebar } from '@/components/shell/sidebar'
 import { Topbar } from '@/components/shell/topbar'
 
@@ -16,7 +15,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex h-dvh">
-      <Sidebar permissions={permissionsFor(actor)} />
+      <Sidebar permissions={await izinAktor(actor)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
           nama={user.name}

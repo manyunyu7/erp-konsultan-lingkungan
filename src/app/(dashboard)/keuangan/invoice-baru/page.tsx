@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Kosong } from '@/components/ui/notice'
 import { LABEL_MILESTONE_TERMIN } from '../labels'
@@ -10,7 +9,7 @@ import { FormInvoice } from './form-invoice'
 export default async function HalamanInvoiceBaru() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'invoice:write')) notFound()
+  if (!await izinkan(actor, 'invoice:write')) notFound()
 
   // Termin yang sudah punya invoice tidak boleh ditagih dua kali.
   const termins = await db.termin.findMany({

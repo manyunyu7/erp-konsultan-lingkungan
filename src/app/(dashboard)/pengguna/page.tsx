@@ -1,6 +1,6 @@
+import Link from 'next/link'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TD, TH, THead, TR } from '@/components/ui/table'
@@ -19,9 +19,9 @@ import { AksiPengguna } from './aksi-pengguna'
 export default async function HalamanPengguna() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'user:read')) return <AksesDitolak />
+  if (!await izinkan(actor, 'user:read')) return <AksesDitolak />
 
-  const bolehTulis = can(actor, 'user:write')
+  const bolehTulis = await izinkan(actor, 'user:write')
 
   // Nonaktif ditempatkan setelah yang aktif supaya daftar kerja sehari-hari
   // tidak tertutup akun lama.
@@ -44,7 +44,13 @@ export default async function HalamanPengguna() {
         <h1 className="text-lg font-semibold tracking-tight">Pengguna</h1>
         <p className="text-sm text-muted-foreground">
           Akun dan hak aksesnya. Peran menentukan wewenang jabatan, divisi menentukan data yang
-          boleh disentuh.
+          boleh disentuh.{' '}
+          <Link
+            href="/pengguna/hak-akses"
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            Atur matriks hak akses
+          </Link>
         </p>
       </div>
 

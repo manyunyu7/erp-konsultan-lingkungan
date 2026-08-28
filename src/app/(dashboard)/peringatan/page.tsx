@@ -1,6 +1,5 @@
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge, type VarianBadge } from '@/components/ui/badge'
 import { AksesDitolak, Kosong } from '@/components/ui/notice'
@@ -38,7 +37,7 @@ function waktuPemicu(nilai: Date): string {
 export default async function HalamanPeringatan() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'notification:read')) return <AksesDitolak />
+  if (!await izinkan(actor, 'notification:read')) return <AksesDitolak />
 
   // Hanya peringatan yang memang ditujukan kepada pengguna ini.
   const items = await db.notificationRecipient.findMany({

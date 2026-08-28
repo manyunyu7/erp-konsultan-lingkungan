@@ -1,7 +1,6 @@
 import { AlertTriangle, Bell, FileClock, FolderKanban, Gavel, Receipt } from 'lucide-react'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TD, TH, THead, TR } from '@/components/ui/table'
@@ -35,7 +34,7 @@ export default async function Beranda() {
     }),
   ])
 
-  const bolehKeuangan = can(actor, 'invoice:read')
+  const bolehKeuangan = await izinkan(actor, 'invoice:read')
   const invoiceJatuhTempo = bolehKeuangan
     ? await db.invoice.count({
         where: { paidAt: null, dueDate: { lt: now }, status: { not: 'CANCELLED' } },

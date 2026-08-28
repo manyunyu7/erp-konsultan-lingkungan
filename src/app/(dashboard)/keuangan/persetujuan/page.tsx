@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Kosong } from '@/components/ui/notice'
@@ -12,7 +11,7 @@ import { KeputusanBiaya } from './keputusan-biaya'
 export default async function HalamanPersetujuanBiaya() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'cost:approve')) notFound()
+  if (!await izinkan(actor, 'cost:approve')) notFound()
 
   const biaya = await db.costEntry.findMany({
     where: { pattern: 'BIDDING', status: 'PENDING_APPROVAL' },

@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
-import { currentActor } from '@/lib/api'
-import { can } from '@/server/auth'
+import { currentActor, izinkan } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Kosong } from '@/components/ui/notice'
 import { FormTermin } from './form-termin'
@@ -9,7 +8,7 @@ import { FormTermin } from './form-termin'
 export default async function HalamanTerminBaru() {
   const actor = await currentActor()
   if (!actor) return null
-  if (!can(actor, 'invoice:write')) notFound()
+  if (!await izinkan(actor, 'invoice:write')) notFound()
 
   // Rencana termijn dibuat sekali per proyek, jadi proyek yang sudah punya
   // rencana tidak perlu ditawarkan lagi.
