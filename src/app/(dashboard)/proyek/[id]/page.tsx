@@ -7,6 +7,7 @@ import { can } from '@/server/auth'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge, type VarianBadge } from '@/components/ui/badge'
 import { Table, TD, TH, THead, TR } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 import { AksesDitolak, Kosong } from '@/components/ui/notice'
 import { rupiah, sisaHari, tanggal } from '@/lib/utils'
 import {
@@ -82,6 +83,9 @@ export default async function HalamanRincianProyek({
   if (!can(actor, 'project:read')) return <AksesDitolak />
 
   const bolehKeuangan = can(actor, 'invoice:read')
+  const bolehProyek = can(actor, 'project:write')
+  const bolehKontrak = can(actor, 'contract:write')
+  const bolehTeknis = can(actor, 'deliverable:write')
   const now = new Date()
 
   const project = await db.project.findUnique({
@@ -124,6 +128,31 @@ export default async function HalamanRincianProyek({
         <p className="text-sm text-muted-foreground">
           {project.code} · {project.client.name}
         </p>
+        {(bolehKontrak || bolehTeknis || bolehProyek) && (
+          <div className="mt-1 flex flex-wrap gap-2">
+            {bolehKontrak && (
+              <Link href={`/proyek/${project.id}/kontrak`}>
+                <Button varian="garis" ukuran="sm">
+                  Catat kontrak
+                </Button>
+              </Link>
+            )}
+            {bolehTeknis && (
+              <Link href={`/proyek/${project.id}/pekerjaan`}>
+                <Button varian="garis" ukuran="sm">
+                  Kelola tahapan teknis
+                </Button>
+              </Link>
+            )}
+            {bolehProyek && (
+              <Link href={`/proyek/${project.id}/penutupan`}>
+                <Button varian="garis" ukuran="sm">
+                  Penutupan proyek
+                </Button>
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
       <Card>

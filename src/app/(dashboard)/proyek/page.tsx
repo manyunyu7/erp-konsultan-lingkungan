@@ -5,6 +5,7 @@ import { can } from '@/server/auth'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TD, TH, THead, TR } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 import { AksesDitolak, Kosong } from '@/components/ui/notice'
 import { rupiah, sisaHari, tanggal } from '@/lib/utils'
 import {
@@ -24,6 +25,7 @@ export default async function HalamanProyek() {
   if (!can(actor, 'project:read')) return <AksesDitolak />
 
   const bolehNilai = can(actor, 'invoice:read')
+  const bolehBuat = can(actor, 'project:write')
   const now = new Date()
 
   const projects = await db.project.findMany({
@@ -42,11 +44,18 @@ export default async function HalamanProyek() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-gap">
-      <div>
-        <h1 className="text-lg font-semibold tracking-tight">Proyek</h1>
-        <p className="text-sm text-muted-foreground">
-          Kontrak yang mendekati berakhir ditandai H-30 dan H-14 — per {tanggal(now)}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold tracking-tight">Proyek</h1>
+          <p className="text-sm text-muted-foreground">
+            Kontrak yang mendekati berakhir ditandai H-30 dan H-14 — per {tanggal(now)}
+          </p>
+        </div>
+        {bolehBuat && (
+          <Link href="/proyek/baru">
+            <Button>Proyek baru</Button>
+          </Link>
+        )}
       </div>
 
       <Card>
