@@ -1,0 +1,42 @@
+/** Permukaan publik modul notifikasi — hanya re-export, tanpa logika. */
+
+export {
+  CATEGORY_OFFSETS,
+  CATEGORY_RECIPIENTS,
+  REQUIRED_ACTIONS,
+  computeTriggerDate,
+  describeOffset,
+  formatJakartaDate,
+  isDue,
+  notificationKey,
+  planCertificateExpiry,
+  planContractExpiry,
+  planInvoicing,
+  planPaymentOverdue,
+  planTechnicalDeadline,
+  planTenderDeadline,
+  startOfJakartaDay,
+  type CertificationInput,
+  type DeliverableInput,
+  type InvoiceInput,
+  type NotificationEntityType,
+  type PlannedNotification,
+  type ProjectInput,
+  type RecipientSpec,
+  type TenderInput,
+  type TerminInput,
+} from './rules'
+
+export {
+  collectPlannedNotifications,
+  createDueNotifications,
+  createLogNotificationSender,
+  dispatchPendingNotifications,
+  resolveRecipientIds,
+  runNotificationScan,
+  type Logger,
+  type NotificationSender,
+  type OutboundNotification,
+  type ScanOptions,
+  type ScanResult,
+} from './service'

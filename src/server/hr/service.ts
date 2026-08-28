@@ -104,9 +104,18 @@ export async function assignPersonnelToProject(input: AssignPersonnelInput) {
   })
 }
 
+interface ExpiringCertificationRow {
+  id: string
+  name: string
+  personnelId: string
+  expiresAt: Date
+}
+
 /** Daftar sertifikat yang masuk ambang peringatan H-60 pada `now`. */
 export async function listExpiringCertifications(now: Date) {
-  const certifications = await db.certification.findMany({
+  // Tipe eksplisit: Prisma client di-generate saat build sehingga inferensi
+  // tidak selalu tersedia di lingkungan pengujian.
+  const certifications: ExpiringCertificationRow[] = await db.certification.findMany({
     include: { personnel: true },
   })
   return certifications
@@ -118,7 +127,7 @@ export async function listExpiringCertifications(now: Date) {
       expiresAt: c.expiresAt,
       daysRemaining: daysUntilExpiry(c.expiresAt, now),
     }))
-    .sort((a, b) => a.daysRemaining - b.daysRemaining)
+    .sort((a: { daysRemaining: number }, b: { daysRemaining: number }) => a.daysRemaining - b.daysRemaining)
 }
 
 export interface CreateManpowerRequestInput extends ManpowerRequestFormInput {

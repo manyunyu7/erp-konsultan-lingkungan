@@ -20,9 +20,9 @@ import { BusinessRuleError } from '@/server/shared/constants'
 /** Apa pun yang bisa dibaca sebagai angka desimal: string, number, Decimal Prisma. */
 export type MoneyInput = string | number | { toString(): string }
 
-const MINOR_SCALE = 100n
+const MINOR_SCALE = BigInt(100)
 /** 100% dinyatakan sebagai 10000 (persen dengan 2 desimal, cocok Decimal(5,2)). */
-export const PERCENT_BASIS_TOTAL = 10_000n
+export const PERCENT_BASIS_TOTAL = BigInt(10000)
 
 const DECIMAL_PATTERN = /^(-)?(\d+)(?:\.(\d+))?$/
 
@@ -39,14 +39,14 @@ export function toMinorUnits(value: MoneyInput): bigint {
   const [, sign, whole, fraction] = match
   // digit ke-3 disimpan hanya sebagai penentu pembulatan
   const guarded = `${fraction ?? ''}000`.slice(0, 3)
-  const scaled = BigInt(whole) * 1000n + BigInt(guarded)
-  const rounded = (scaled + 5n) / 10n
+  const scaled = BigInt(whole) * BigInt(1000) + BigInt(guarded)
+  const rounded = (scaled + BigInt(5)) / BigInt(10)
   return sign === '-' ? -rounded : rounded
 }
 
 /** Kebalikan `toMinorUnits`: selalu 2 angka desimal agar konsisten di DB dan UI. */
 export function fromMinorUnits(minor: bigint): string {
-  const negative = minor < 0n
+  const negative = minor < BigInt(0)
   const absolute = negative ? -minor : minor
   const whole = absolute / MINOR_SCALE
   const fraction = absolute % MINOR_SCALE
@@ -55,9 +55,9 @@ export function fromMinorUnits(minor: bigint): string {
 
 /** Bagi dengan pembulatan half-up; dipakai saat menurunkan nominal dari persentase. */
 function divideRoundHalfUp(numerator: bigint, denominator: bigint): bigint {
-  const negative = numerator < 0n
+  const negative = numerator < BigInt(0)
   const absolute = negative ? -numerator : numerator
-  const result = (absolute * 2n + denominator) / (denominator * 2n)
+  const result = (absolute * BigInt(2) + denominator) / (denominator * BigInt(2))
   return negative ? -result : result
 }
 
@@ -122,7 +122,7 @@ export interface ValidatedBiddingCost {
 
 function assertPositiveAmount(amount: MoneyInput): bigint {
   const minor = toMinorUnits(amount)
-  if (minor <= 0n) {
+  if (minor <= BigInt(0)) {
     throw new BusinessRuleError('Nominal biaya harus lebih besar dari nol.', 'COST_AMOUNT_NOT_POSITIVE')
   }
   return minor
@@ -267,9 +267,9 @@ export interface TerminSpec {
 }
 
 export const TERMIN_SPECS: readonly TerminSpec[] = [
-  { sequence: 1, name: 'Termin I', milestone: 'CONTRACT_SIGNED', minBasis: 2_000n, maxBasis: 3_000n },
-  { sequence: 2, name: 'Termin II', milestone: 'DRAFT_REPORT', minBasis: 4_000n, maxBasis: 5_000n },
-  { sequence: 3, name: 'Termin III', milestone: 'BAST', minBasis: 2_000n, maxBasis: 3_000n },
+  { sequence: 1, name: 'Termin I', milestone: 'CONTRACT_SIGNED', minBasis: BigInt(2000), maxBasis: BigInt(3000) },
+  { sequence: 2, name: 'Termin II', milestone: 'DRAFT_REPORT', minBasis: BigInt(4000), maxBasis: BigInt(5000) },
+  { sequence: 3, name: 'Termin III', milestone: 'BAST', minBasis: BigInt(2000), maxBasis: BigInt(3000) },
 ]
 
 export interface TerminPlanItem {
@@ -306,7 +306,7 @@ export function buildTerminPlan(
       )
     }
   })
-  const total = basisList.reduce((sum, basis) => sum + basis, 0n)
+  const total = basisList.reduce((sum, basis) => sum + basis, BigInt(0))
   if (total !== PERCENT_BASIS_TOTAL) {
     throw new BusinessRuleError(
       `Total persentase termin harus tepat 100%, saat ini ${Number(total) / 100}%.`,
@@ -315,11 +315,11 @@ export function buildTerminPlan(
   }
 
   const contractMinor = toMinorUnits(contractValue)
-  if (contractMinor <= 0n) {
+  if (contractMinor <= BigInt(0)) {
     throw new BusinessRuleError('Nilai kontrak harus lebih besar dari nol.', 'CONTRACT_VALUE_NOT_POSITIVE')
   }
 
-  let allocated = 0n
+  let allocated = BigInt(0)
   return TERMIN_SPECS.map((spec, index) => {
     const isLast = index === TERMIN_SPECS.length - 1
     const amountMinor = isLast
@@ -393,9 +393,9 @@ export function summarizeCashFlow(
   invoices: readonly InvoiceLike[],
   now: Date,
 ): CashFlowSummary {
-  let billed = 0n
-  let paid = 0n
-  let overdue = 0n
+  let billed = BigInt(0)
+  let paid = BigInt(0)
+  let overdue = BigInt(0)
   let overdueCount = 0
   for (const invoice of invoices) {
     if (invoice.status === 'CANCELLED') continue
@@ -430,7 +430,7 @@ export interface CostLike {
 export const COUNTED_COST_STATUSES = ['APPROVED', 'PAID'] as const
 
 export function calculateDirectCostTotal(costs: readonly CostLike[]): string {
-  let total = 0n
+  let total = BigInt(0)
   for (const cost of costs) {
     if (!COUNTED_COST_STATUSES.includes(cost.status as (typeof COUNTED_COST_STATUSES)[number])) {
       continue
@@ -456,7 +456,7 @@ export function calculateProjectMargin(
   const costMinor = toMinorUnits(directCostTotal)
   const profit = contractMinor - costMinor
   const marginBasis =
-    contractMinor === 0n
+    contractMinor === BigInt(0)
       ? null
       : divideRoundHalfUp(profit * PERCENT_BASIS_TOTAL, contractMinor)
   return {

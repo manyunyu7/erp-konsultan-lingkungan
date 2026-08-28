@@ -105,7 +105,7 @@ export async function decideBiddingApproval(input: DecideBiddingApprovalInput) {
     data: { decision: input.decision, note: input.note ?? null, decidedAt: input.now },
   })
 
-  const merged = costEntry.approvals.map((approval) =>
+  const merged = costEntry.approvals.map((approval: { role: string; decision: string }) =>
     approval.role === role ? { ...approval, decision: input.decision } : approval,
   )
   const status = resolveBiddingApprovalStatus(merged)
@@ -140,7 +140,7 @@ export async function createProjectCost(input: CreateProjectCostInput) {
     tenderId: null,
     projectId: input.projectId,
     amount: input.amount,
-    hasSignedContract: project.contracts.some((contract) => Boolean(contract.signedAt)),
+    hasSignedContract: project.contracts.some((contract: { signedAt: Date | null }) => Boolean(contract.signedAt)),
   })
 
   return db.costEntry.create({
@@ -169,7 +169,7 @@ export async function getProjectCostSummary(projectId: string) {
     throw new BusinessRuleError(`Proyek ${projectId} tidak ditemukan.`, 'PROJECT_NOT_FOUND')
   }
 
-  const projectCosts = project.costs.filter((cost) => cost.pattern === 'PROJECT')
+  const projectCosts = project.costs.filter((cost: { pattern: string }) => cost.pattern === 'PROJECT')
   const directCost = calculateDirectCostTotal(projectCosts)
 
   return {
