@@ -7,6 +7,8 @@ import { BusinessRuleError, type Division, type Role } from '@/server/shared/con
  * pengecekan peran yang tersebar di seluruh kode. Dengan begitu penambahan
  * divisi baru cukup mengubah tabel di berkas ini.
  */
+export const USER_MANAGEMENT_PERMISSIONS = ['user:read', 'user:write'] as const
+
 export const PERMISSIONS = [
   'tender:read',
   'tender:write',
@@ -45,13 +47,13 @@ const BASE_PERMISSIONS: Permission[] = ['notification:read']
  * menyetujui pengeluarannya sendiri — persis gate dua-peran yang hendak
  * dijaga pada biaya tender. Karena itu izin user:* hanya milik SUPERADMIN.
  */
-const USER_PERMISSIONS: Permission[] = ['user:read', 'user:write']
+const USER_PERMISSIONS: Permission[] = [...USER_MANAGEMENT_PERMISSIONS]
 
 const BUSINESS_PERMISSIONS = PERMISSIONS.filter(
   (permission) => !USER_PERMISSIONS.includes(permission),
 )
 
-const DIVISION_PERMISSIONS: Record<Division, Permission[]> = {
+export const DIVISION_PERMISSIONS: Record<Division, Permission[]> = {
   MARKETING: ['tender:read', 'tender:write', 'project:read', 'cost:read', 'cost:write'],
   ADMIN_LEGAL: [
     'project:read',
@@ -81,7 +83,7 @@ const DIVISION_PERMISSIONS: Record<Division, Permission[]> = {
 }
 
 /** Tambahan izin yang melekat pada jabatan, terlepas dari divisinya. */
-const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   // Administrator sistem: mengurus akun, bukan mengurus pekerjaan.
   SUPERADMIN: [...USER_PERMISSIONS],
   DIREKTUR: [...BUSINESS_PERMISSIONS],
@@ -109,26 +111,54 @@ export interface Actor {
   isActive: boolean
 }
 
-/** Gabungan izin dasar, izin divisi, dan izin jabatan — tanpa duplikat. */
-export function permissionsFor(actor: Pick<Actor, 'role' | 'division'>): Permission[] {
+/** Bentuk matriks hak akses; dipakai baik oleh bawaan maupun hasil suntingan. */
+export interface PermissionMatrix {
+  roles: Record<Role, Permission[]>
+  divisions: Record<Division, Permission[]>
+}
+
+/** Matriks bawaan — dipakai bila belum ada suntingan tersimpan. */
+export const DEFAULT_MATRIX: PermissionMatrix = {
+  roles: ROLE_PERMISSIONS,
+  divisions: DIVISION_PERMISSIONS,
+}
+
+/**
+ * Gabungan izin dasar, izin divisi, dan izin jabatan — tanpa duplikat.
+ *
+ * `matrix` dapat diisi matriks hasil suntingan administrator; bila tidak
+ * diisi, yang berlaku adalah matriks bawaan di berkas ini.
+ */
+export function permissionsFor(
+  actor: Pick<Actor, 'role' | 'division'>,
+  matrix: PermissionMatrix = DEFAULT_MATRIX,
+): Permission[] {
   return [
     ...new Set([
       ...BASE_PERMISSIONS,
-      ...DIVISION_PERMISSIONS[actor.division],
-      ...ROLE_PERMISSIONS[actor.role],
+      ...matrix.divisions[actor.division],
+      ...matrix.roles[actor.role],
     ]),
   ]
 }
 
-export function can(actor: Actor, permission: Permission): boolean {
+export function can(
+  actor: Actor,
+  permission: Permission,
+  matrix: PermissionMatrix = DEFAULT_MATRIX,
+): boolean {
   // Akun nonaktif kehilangan seluruh akses, sekalipun perannya direktur.
   if (!actor.isActive) return false
-  return permissionsFor(actor).includes(permission)
+  return permissionsFor(actor, matrix).includes(permission)
 }
 
 /** Varian `can` yang melempar — dipakai di lapisan API agar alurnya ringkas. */
-export function assertCan(actor: Actor, permission: Permission): void {
-  if (!can(actor, permission)) {
+export function assertCan(
+  actor: Actor,
+  permission: Permission,
+  matrix: PermissionMatrix = DEFAULT_MATRIX,
+): void {
+  if (!can(actor, permission, matrix)) {
     throw new BusinessRuleError(
       `Akses ditolak: ${permission} tidak tersedia untuk ${actor.role}/${actor.division}.`,
       'FORBIDDEN',

@@ -425,3 +425,22 @@ model AuditLog {
 
   @@index([entityType, entityId])
 }
+
+// --------------------------------------------------------- HAK AKSES DINAMIS
+
+/**
+ * Pemberian izin yang dapat disunting administrator dari dalam aplikasi.
+ *
+ * Bila tabel ini kosong, sistem memakai matriks bawaan di kode — sehingga
+ * kegagalan memuat data tidak pernah berarti "semua orang boleh segalanya".
+ */
+model PermissionGrant {
+  id          String   @id @default(cuid())
+  subjectType String // ROLE | DIVISION
+  subject     String // nilai peran atau divisi
+  permission  String
+  createdAt   DateTime @default(now())
+
+  @@unique([subjectType, subject, permission])
+  @@index([subjectType, subject])
+}

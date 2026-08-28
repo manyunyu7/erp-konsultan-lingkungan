@@ -4,11 +4,14 @@ import { BusinessRuleError } from '@/server/shared/constants'
 import {
   SESSION_COOKIE,
   assertCan,
+  can,
   loadActor,
+  permissionsFor,
   readSessionToken,
   type Actor,
   type Permission,
 } from '@/server/auth'
+import { loadMatrix } from '@/server/authz'
 
 /**
  * Jembatan tipis antara HTTP dan lapisan aturan bisnis.
@@ -48,12 +51,28 @@ export async function currentActor(): Promise<Actor | null> {
   }
 }
 
-/** Memastikan pemanggil sudah masuk dan memiliki izin yang diminta. */
+/**
+ * Memastikan pemanggil sudah masuk dan memiliki izin yang diminta.
+ *
+ * Matriks hak akses dibaca dari basis data agar suntingan administrator
+ * langsung berlaku; bila belum pernah disunting, yang dipakai adalah matriks
+ * bawaan di kode.
+ */
 export async function requireActor(permission?: Permission): Promise<Actor> {
   const actor = await currentActor()
   if (!actor) throw new HttpError(401, 'Silakan masuk terlebih dahulu.', 'UNAUTHENTICATED')
-  if (permission) assertCan(actor, permission)
+  if (permission) assertCan(actor, permission, await loadMatrix())
   return actor
+}
+
+/** Pemeriksaan izin untuk komponen server, memakai matriks yang berlaku. */
+export async function izinkan(actor: Actor, permission: Permission): Promise<boolean> {
+  return can(actor, permission, await loadMatrix())
+}
+
+/** Daftar izin efektif seorang aktor, dipakai menyaring menu. */
+export async function izinAktor(actor: Actor): Promise<Permission[]> {
+  return permissionsFor(actor, await loadMatrix())
 }
 
 export function ok<T>(data: T, status = 200) {
