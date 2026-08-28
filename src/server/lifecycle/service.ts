@@ -143,11 +143,12 @@ export async function collectApprovedStages(projectId: string): Promise<Technica
   const deliverables = await db.deliverable.findMany({ where: { projectId } })
   const samples = await db.labSample.findMany({ where: { projectId } })
 
-  const approved = deliverables
+  const approved = (deliverables as { status: string; type: string }[])
     .filter((d) => d.status === 'APPROVED')
     .map((d) => d.type as TechnicalStage)
 
-  if (samples.length > 0 && samples.every((s) => s.status === 'REPORTED')) {
+  const sampleRows = samples as { status: string }[]
+  if (sampleRows.length > 0 && sampleRows.every((s) => s.status === 'REPORTED')) {
     approved.push('LAB_TEST')
   }
 
@@ -282,7 +283,8 @@ export async function getClosureChecklist(input: {
   const termins = await db.termin.findMany({ where: { projectId: input.projectId } })
 
   // Termin final = sequence terbesar; lunas bila statusnya PAID.
-  const finalTermin = termins.reduce<(typeof termins)[number] | null>(
+  type TerminRow = { sequence: number; status: string }
+  const finalTermin = (termins as TerminRow[]).reduce<TerminRow | null>(
     (acc, t) => (acc === null || t.sequence > acc.sequence ? t : acc),
     null,
   )
