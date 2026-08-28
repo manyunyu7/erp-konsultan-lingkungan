@@ -28,12 +28,28 @@ export const PERMISSIONS = [
   'csat:read',
   'csat:write',
   'notification:read',
+  'user:read',
+  'user:write',
 ] as const
 
 export type Permission = (typeof PERMISSIONS)[number]
 
 /** Semua orang di perusahaan boleh melihat notifikasi yang ditujukan padanya. */
 const BASE_PERMISSIONS: Permission[] = ['notification:read']
+
+/**
+ * Pengelolaan akun sengaja dipisahkan dari wewenang bisnis.
+ *
+ * Yang memegang kunci akun tidak boleh sekaligus memegang kunci uang: bila
+ * Direktur dapat membuat akun, ia bisa membuat akun Finance Manager palsu lalu
+ * menyetujui pengeluarannya sendiri — persis gate dua-peran yang hendak
+ * dijaga pada biaya tender. Karena itu izin user:* hanya milik SUPERADMIN.
+ */
+const USER_PERMISSIONS: Permission[] = ['user:read', 'user:write']
+
+const BUSINESS_PERMISSIONS = PERMISSIONS.filter(
+  (permission) => !USER_PERMISSIONS.includes(permission),
+)
 
 const DIVISION_PERMISSIONS: Record<Division, Permission[]> = {
   MARKETING: ['tender:read', 'tender:write', 'project:read', 'cost:read', 'cost:write'],
@@ -58,12 +74,17 @@ const DIVISION_PERMISSIONS: Record<Division, Permission[]> = {
   // Divisi manajemen memantau seluruh lini, tetapi memantau bukan berarti
   // boleh bertindak: wewenang menyetujui biaya dan menerbitkan invoice melekat
   // pada jabatan (Direktur, Finance Manager), bukan pada penempatan divisi.
-  MANAJEMEN: PERMISSIONS.filter((p) => p.endsWith(':read')),
+  MANAJEMEN: BUSINESS_PERMISSIONS.filter((p) => p.endsWith(':read')),
+  // Administrator sistem tidak ditempatkan pada divisi bisnis manapun, supaya
+  // tidak diam-diam mewarisi hak memantau pekerjaan yang bukan urusannya.
+  SISTEM: [],
 }
 
 /** Tambahan izin yang melekat pada jabatan, terlepas dari divisinya. */
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
-  DIREKTUR: [...PERMISSIONS],
+  // Administrator sistem: mengurus akun, bukan mengurus pekerjaan.
+  SUPERADMIN: [...USER_PERMISSIONS],
+  DIREKTUR: [...BUSINESS_PERMISSIONS],
   FINANCE_MANAGER: ['cost:approve', 'invoice:write', 'invoice:read', 'cost:read', 'cost:write'],
   PROJECT_MANAGER: [
     'project:read',

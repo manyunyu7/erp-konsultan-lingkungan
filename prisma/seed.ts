@@ -91,6 +91,14 @@ const USER_SEEDS: UserSeed[] = [
     jabatan: 'Finance Manager',
   },
   {
+    // Administrator sistem: mengurus akun, bukan mengurus pekerjaan.
+    email: 'admin@hijaunusantara.co.id',
+    name: 'Adm. Sistem Hijau Nusantara',
+    role: 'SUPERADMIN',
+    division: 'SISTEM',
+    jabatan: 'Administrator Sistem',
+  },
+  {
     email: 'maya.kusuma@hijaunusantara.co.id',
     name: 'Maya Kusumawardani, S.E.',
     role: 'STAFF',

@@ -105,11 +105,34 @@ describe('Skenario: matriks hak akses per divisi', () => {
     )
   })
 
-  it('peran DIREKTUR — boleh melakukan seluruh aksi tanpa kecuali', () => {
-    for (const permission of PERMISSIONS) {
+  it('peran DIREKTUR — boleh seluruh aksi bisnis, tetapi tidak mengelola akun', () => {
+    const bisnis = PERMISSIONS.filter((permission) => !permission.startsWith('user:'))
+
+    for (const permission of bisnis) {
       expect(can(DIREKTUR, permission), `Direktur seharusnya boleh ${permission}`).toBe(true)
     }
-    expect(permissionsFor(DIREKTUR)).toHaveLength(PERMISSIONS.length)
+    // Pemisahan tugas: bila Direktur dapat membuat akun, ia bisa membuat
+    // Finance Manager palsu lalu menyetujui pengeluarannya sendiri.
+    expect(can(DIREKTUR, 'user:write')).toBe(false)
+    expect(permissionsFor(DIREKTUR)).toHaveLength(bisnis.length)
+  })
+
+  it('peran SUPERADMIN — mengelola akun, tetapi tidak menyentuh urusan bisnis', () => {
+    const superadmin = {
+      id: 'sa-1',
+      role: 'SUPERADMIN' as const,
+      division: 'SISTEM' as const,
+      isActive: true,
+    }
+
+    expect(can(superadmin, 'user:read')).toBe(true)
+    expect(can(superadmin, 'user:write')).toBe(true)
+
+    for (const permission of PERMISSIONS.filter(
+      (p) => !p.startsWith('user:') && p !== 'notification:read',
+    )) {
+      expect(can(superadmin, permission), `Superadmin tidak boleh ${permission}`).toBe(false)
+    }
   })
 
   it('akun NONAKTIF — kehilangan seluruh akses, termasuk izin dasar notifikasi', () => {
@@ -154,9 +177,14 @@ describe('Skenario: pemisahan tugas pada satu berkas biaya tender', () => {
     // biaya dan menerbitkan invoice tetap milik Direktur dan Finance Manager.
     // Seluruh hak memantau tersedia; hak menulis yang dimilikinya murni berasal
     // dari jabatan Project Manager, bukan dari penempatan di divisi manajemen.
-    for (const permission of PERMISSIONS.filter((p) => p.endsWith(':read'))) {
+    for (const permission of PERMISSIONS.filter(
+      (p) => p.endsWith(':read') && !p.startsWith('user:'),
+    )) {
       expect(can(MANAJER_MUTU, permission)).toBe(true)
     }
+
+    // Pengelolaan akun bukan urusan divisi manajemen.
+    expect(can(MANAJER_MUTU, 'user:read')).toBe(false)
 
     expect(can(MANAJER_MUTU, 'cost:approve')).toBe(false)
     expect(can(MANAJER_MUTU, 'invoice:write')).toBe(false)

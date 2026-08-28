@@ -3,7 +3,13 @@
  * supaya lapisan UI tidak pernah menebak-nebak nilainya.
  */
 
-export const ROLES = ['DIREKTUR', 'FINANCE_MANAGER', 'PROJECT_MANAGER', 'STAFF'] as const
+export const ROLES = [
+  'SUPERADMIN',
+  'DIREKTUR',
+  'FINANCE_MANAGER',
+  'PROJECT_MANAGER',
+  'STAFF',
+] as const
 export type Role = (typeof ROLES)[number]
 
 export const DIVISIONS = [
@@ -13,6 +19,7 @@ export const DIVISIONS = [
   'TEKNIS',
   'HR',
   'MANAJEMEN',
+  'SISTEM',
 ] as const
 export type Division = (typeof DIVISIONS)[number]
 

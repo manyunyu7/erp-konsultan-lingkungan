@@ -30,16 +30,36 @@ describe('permissionsFor', () => {
     expect(new Set(result).size).toBe(result.length)
   })
 
-  it('memberi seluruh izin kepada direktur di divisi manapun', () => {
-    expect(permissionsFor({ role: 'DIREKTUR', division: 'TEKNIS' })).toEqual(
-      expect.arrayContaining([...PERMISSIONS]),
+  it('memberi seluruh izin bisnis kepada direktur di divisi manapun', () => {
+    const hasil = permissionsFor({ role: 'DIREKTUR', division: 'TEKNIS' })
+
+    expect(hasil).toEqual(
+      expect.arrayContaining(PERMISSIONS.filter((p) => !p.startsWith('user:'))),
     )
+    expect(hasil).not.toContain('user:write')
+  })
+
+  it('memisahkan pengelolaan akun ke superadmin, terlepas dari divisinya', () => {
+    const hasil = permissionsFor({ role: 'SUPERADMIN', division: 'SISTEM' })
+
+    expect(hasil).toEqual(
+      expect.arrayContaining(['user:read', 'user:write', 'notification:read']),
+    )
+    expect(hasil).not.toContain('cost:approve')
+    expect(hasil).not.toContain('invoice:write')
+    expect(hasil).not.toContain('project:read')
   })
 
   it('memberi divisi manajemen hak memantau saja, bukan hak bertindak', () => {
     const hasil = permissionsFor({ role: 'STAFF', division: 'MANAJEMEN' })
 
-    expect(hasil).toEqual(expect.arrayContaining(PERMISSIONS.filter((p) => p.endsWith(':read'))))
+    expect(hasil).toEqual(
+      expect.arrayContaining(
+        PERMISSIONS.filter((p) => p.endsWith(':read') && !p.startsWith('user:')),
+      ),
+    )
+    // Memantau pekerjaan bukan berarti boleh melihat, apalagi mengubah, akun.
+    expect(hasil).not.toContain('user:read')
     expect(hasil).not.toContain('cost:approve')
     expect(hasil).not.toContain('invoice:write')
     expect(hasil).not.toContain('contract:write')
