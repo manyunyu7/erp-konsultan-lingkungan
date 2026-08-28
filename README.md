@@ -157,7 +157,8 @@ Setelah `npm run setup`, seluruh akun contoh memakai kata sandi
 
 | Peran | Email |
 | --- | --- |
-| Direktur — berwenang penuh | `bambang.sutrisno@hijaunusantara.co.id` |
+| Administrator sistem — kelola akun | `admin@hijaunusantara.co.id` |
+| Direktur — berwenang penuh atas urusan bisnis | `bambang.sutrisno@hijaunusantara.co.id` |
 | Finance Manager | `retno.wulandari@hijaunusantara.co.id` |
 | Project Manager teknis | `siti.nurhaliza@hijaunusantara.co.id` |
 | Staf teknis — akses paling terbatas | `yudi.hermawan@hijaunusantara.co.id` |
@@ -165,6 +166,19 @@ Setelah `npm run setup`, seluruh akun contoh memakai kata sandi
 
 Daftar lengkap dicetak di akhir proses seed. Masuk sebagai Direktur lalu
 sebagai staf teknis untuk melihat perbedaan wewenangnya.
+
+### Pengelolaan akun
+
+Peran **Superadmin** mengurus akun: menambah karyawan, menonaktifkan yang
+keluar, mengubah peran, dan menyetel ulang kata sandi — lewat menu
+**Pengguna**.
+
+Wewenangnya sengaja dipisah dari urusan bisnis. Superadmin tidak dapat
+menyetujui biaya maupun menerbitkan invoice; sebaliknya Direktur tidak dapat
+mengelola akun. Alasannya: bila satu orang dapat membuat akun sekaligus
+menyetujui pengeluaran, ia bisa membuat Finance Manager palsu lalu menyetujui
+pengajuannya sendiri — dan pengendalian dua-peran pada biaya tender kehilangan
+maknanya.
 
 ### Pengalih akun saat pengembangan
 
@@ -202,4 +216,7 @@ Belum dikerjakan:
 - [ ] Unggah dan penyimpanan berkas dokumen
 - [ ] Penyuntingan dan penghapusan data yang sudah tercatat (saat ini
       pengisian baru dan perubahan status; koreksi masih lewat basis data)
+- [ ] Pemutusan sesi yang sedang berjalan saat kata sandi disetel ulang atau
+      akun dinonaktifkan — token bersifat mandiri, sehingga pemilik akun tetap
+      masuk sampai sesinya kedaluwarsa (maksimal delapan jam)
 - [ ] Penyiapan penempatan ke server

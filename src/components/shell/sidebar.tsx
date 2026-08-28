@@ -8,6 +8,7 @@ import {
   Gavel,
   LayoutDashboard,
   Palette,
+  ShieldCheck,
   Users,
   Wallet,
   type LucideIcon,
@@ -23,6 +24,7 @@ const IKON: Record<string, LucideIcon> = {
   Users,
   Bell,
   Palette,
+  ShieldCheck,
 }
 
 export function Sidebar({ permissions }: { permissions: string[] }) {
