@@ -150,11 +150,37 @@ diganti.
 
 ---
 
+## Akun uji coba
+
+Setelah `npm run setup`, seluruh akun contoh memakai kata sandi
+`Lingkungan2026`. Beberapa yang berguna untuk membandingkan hak akses:
+
+| Peran | Email |
+| --- | --- |
+| Direktur — berwenang penuh | `bambang.sutrisno@hijaunusantara.co.id` |
+| Finance Manager | `retno.wulandari@hijaunusantara.co.id` |
+| Project Manager teknis | `siti.nurhaliza@hijaunusantara.co.id` |
+| Staf teknis — akses paling terbatas | `yudi.hermawan@hijaunusantara.co.id` |
+| Staf marketing | `rizky.ramadhan@hijaunusantara.co.id` |
+
+Daftar lengkap dicetak di akhir proses seed. Masuk sebagai Direktur lalu
+sebagai staf teknis untuk melihat perbedaan wewenangnya.
+
 ## Status pengembangan
 
 - [x] Skema database & pondasi proyek
-- [ ] Domain keuangan, HR, notifikasi, lifecycle
-- [ ] Autentikasi & hak akses per divisi
-- [ ] Endpoint API
-- [ ] Antarmuka dashboard & sistem tema
-- [ ] Data contoh untuk uji coba
+- [x] Domain keuangan, HR, notifikasi, dan siklus proyek — 357 tes, cakupan 100%
+- [x] Autentikasi & hak akses per divisi
+- [x] Endpoint API
+- [x] Antarmuka dashboard & sistem tema
+- [x] Data contoh untuk uji coba
+
+Belum dikerjakan:
+
+- [ ] Formulir pengisian data lewat antarmuka (saat ini pengisian melalui seed
+      atau langsung ke basis data; seluruh aturan dan endpointnya sudah siap)
+- [ ] Pengiriman email sungguhan untuk peringatan — titik sambungnya ada pada
+      `NotificationSender`, saat ini hanya mencatat ke basis data
+- [ ] Penjadwal berkala yang memanggil `/api/notifications/scan`
+- [ ] Unggah dan penyimpanan berkas dokumen
+- [ ] Penyiapan penempatan ke server
