@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { db } from '@/lib/db'
 import { currentActor } from '@/lib/api'
 import { can } from '@/server/auth'
@@ -6,6 +7,7 @@ import { Badge, type VarianBadge } from '@/components/ui/badge'
 import { Table, TD, TH, THead, TR } from '@/components/ui/table'
 import { AksesDitolak, Kosong } from '@/components/ui/notice'
 import { rupiah, sisaHari, tanggal } from '@/lib/utils'
+import { LABEL_PERAN_PENYETUJU } from './labels'
 
 const INVOICE_STATUS_LABEL: Record<string, string> = {
   DRAFT: 'Draf',
@@ -31,10 +33,6 @@ const BIAYA_STATUS_VARIAN: Record<string, VarianBadge> = {
   PAID: 'info',
 }
 
-const PERAN_PENYETUJU_LABEL: Record<string, string> = {
-  DIREKTUR: 'Direktur',
-  FINANCE_MANAGER: 'Finance Manager',
-}
 
 export default async function HalamanKeuangan() {
   const actor = await currentActor()
@@ -84,6 +82,22 @@ export default async function HalamanKeuangan() {
           Penagihan dan biaya operasional per {tanggal(now)}
         </p>
       </div>
+
+      {/* Tautan tindakan mengikuti izin yang sama persis dengan endpointnya. */}
+      {(can(actor, 'cost:write') || can(actor, 'cost:approve') || can(actor, 'invoice:write')) && (
+        <div className="flex flex-wrap gap-2">
+          {can(actor, 'cost:write') && <TautanTindakan href="/keuangan/biaya-baru" label="Catat biaya" />}
+          {can(actor, 'cost:approve') && (
+            <TautanTindakan href="/keuangan/persetujuan" label="Persetujuan biaya tender" />
+          )}
+          {can(actor, 'invoice:write') && (
+            <TautanTindakan href="/keuangan/termin-baru" label="Rencana termin" />
+          )}
+          {can(actor, 'invoice:write') && (
+            <TautanTindakan href="/keuangan/invoice-baru" label="Terbitkan invoice" />
+          )}
+        </div>
+      )}
 
       <div className="grid gap-gap sm:grid-cols-2 lg:grid-cols-4">
         <KartuNominal label="Total tertagih" nilai={tertagih} />
@@ -205,6 +219,17 @@ export default async function HalamanKeuangan() {
   )
 }
 
+function TautanTindakan({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex h-9 items-center rounded-md border px-4 text-sm font-medium transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+    >
+      {label}
+    </Link>
+  )
+}
+
 interface BarisBiaya {
   id: string
   category: string
@@ -265,7 +290,7 @@ function TabelBiaya({ daftar, kolomAcuan }: { daftar: BarisBiaya[]; kolomAcuan: 
                             : 'peringatan'
                       }
                     >
-                      {PERAN_PENYETUJU_LABEL[a.role] ?? a.role}:{' '}
+                      {LABEL_PERAN_PENYETUJU[a.role] ?? a.role}:{' '}
                       {a.decision === 'APPROVED'
                         ? `setuju (${a.approver.name})`
                         : a.decision === 'REJECTED'
